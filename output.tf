@@ -3,7 +3,7 @@ output "vm_ids" {
   value       = concat(azurerm_virtual_machine.vm-windows.*.id, azurerm_virtual_machine.vm-linux.*.id)
 }
 
-output "network_security_group_id" {
+/*output "network_security_group_id" {
   description = "id of the security group provisioned"
   value       = azurerm_network_security_group.vm.id
 }
@@ -11,7 +11,7 @@ output "network_security_group_id" {
 output "network_security_group_name" {
   description = "name of the security group provisioned"
   value       = azurerm_network_security_group.vm.name
-}
+} */
 
 output "network_interface_ids" {
   description = "ids of the vm nics provisoned."
@@ -38,10 +38,10 @@ output "public_ip_dns_name" {
   value       = azurerm_public_ip.vm.*.fqdn
 }
 
-output "availability_set_id" {
+/*output "availability_set_id" {
   description = "id of the availability set where the vms are provisioned."
   value       = azurerm_availability_set.vm.id
-}
+}*/
 
 output "vm_zones" {
   description = "map with key `Virtual Machine Id`, value `list of the Availability Zone` which the Virtual Machine should be allocated in."

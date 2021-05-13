@@ -26,6 +26,18 @@ variable "admin_password" {
   default     = ""
 }
 
+variable "dom_admin_password" {
+  description = "The domain admin password to be used to add to domain."
+  type        = string
+  default     = ""
+}
+
+variable "admin_user" {
+  description = "The domain admin username to be used to add to domain."
+  type        = string
+  default     = ""
+}
+
 variable "extra_ssh_keys" {
   description = "Same as ssh_key, but allows for setting multiple public keys. Set your first key in ssh_key, and the extras here."
   type        = list(string)
@@ -240,4 +252,22 @@ variable "os_profile_secrets" {
   description = "Specifies a list of certificates to be installed on the VM, each list item is a map with the keys source_vault_id, certificate_url and certificate_store."
   type        = list(map(string))
   default     = []
+}
+
+variable "storage_name" {
+  description = "Storage account to store scripts"
+  type        = string
+  default     = "twgprodscriptssa01"
+}
+
+variable "storage_key" {
+  description = "Azure storage account key to run powershell script"
+  type        = string
+  default     = ""
+}
+
+variable "enable_automatic_upgrades" {
+  description = "Bool flag to enable or disable automatic upgrades"
+  type        = bool
+  default     = false
 }

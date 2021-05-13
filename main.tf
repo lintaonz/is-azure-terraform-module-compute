@@ -31,10 +31,10 @@ resource "azurerm_storage_account" "vm-sa" {
 
 resource "azurerm_virtual_machine" "vm-linux" {
   count                         = ! contains(list(var.vm_os_simple, var.vm_os_offer), "WindowsServer") && ! var.is_windows_image ? var.nb_instances : 0
-  name                          = "${var.vm_hostname}-vmLinux-${count.index}"
+  name                          = "${var.vm_hostname}-0${count.index+1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
-  availability_set_id           = azurerm_availability_set.vm.id
+  //availability_set_id           = azurerm_availability_set.vm.id
   vm_size                       = var.vm_size
   network_interface_ids         = [element(azurerm_network_interface.vm.*.id, count.index)]
   delete_os_disk_on_termination = var.delete_os_disk_on_termination
@@ -63,7 +63,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
   }
 
   storage_os_disk {
-    name              = "osdisk-${var.vm_hostname}-${count.index}"
+    name              = "osdisk-${var.vm_hostname}-0${count.index+1}"
     create_option     = "FromImage"
     caching           = "ReadWrite"
     managed_disk_type = var.storage_account_type
@@ -72,7 +72,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
   dynamic storage_data_disk {
     for_each = range(var.nb_data_disk)
     content {
-      name              = "${var.vm_hostname}-datadisk-${count.index}-${storage_data_disk.value}"
+      name              = "${var.vm_hostname}-datadisk-0${count.index+1}-${storage_data_disk.value}"
       create_option     = "Empty"
       lun               = storage_data_disk.value
       disk_size_gb      = var.data_disk_size_gb
@@ -83,7 +83,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
   dynamic storage_data_disk {
     for_each = var.extra_disks
     content {
-      name              = "${var.vm_hostname}-extradisk-${count.index}-${storage_data_disk.value.name}"
+      name              = "${var.vm_hostname}-extradisk-0${count.index+1}-${storage_data_disk.value.name}"
       create_option     = "Empty"
       lun               = storage_data_disk.key + var.nb_data_disk
       disk_size_gb      = storage_data_disk.value.size
@@ -92,7 +92,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
   }
 
   os_profile {
-    computer_name  = "${var.vm_hostname}-${count.index}"
+    computer_name  = "${var.vm_hostname}-0${count.index+1}"
     admin_username = var.admin_username
     admin_password = var.admin_password
     custom_data    = var.custom_data
@@ -143,7 +143,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
   name                          = "${var.vm_hostname}-0${count.index + 1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
-  availability_set_id           = azurerm_availability_set.vm.id
+  //availability_set_id           = azurerm_availability_set.vm.id
   vm_size                       = var.vm_size
   network_interface_ids         = [element(azurerm_network_interface.vm.*.id, count.index)]
   delete_os_disk_on_termination = var.delete_os_disk_on_termination
@@ -173,7 +173,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
   }
 
   storage_os_disk {
-    name              = "${var.vm_hostname}-osdisk-${count.index}"
+    name              = "${var.vm_hostname}-osdisk-0${count.index+1}"
     create_option     = "FromImage"
     caching           = "ReadWrite"
     managed_disk_type = var.storage_account_type
@@ -182,7 +182,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
   dynamic storage_data_disk {
     for_each = range(var.nb_data_disk)
     content {
-      name              = "${var.vm_hostname}-datadisk-${count.index}-${storage_data_disk.value}"
+      name              = "${var.vm_hostname}-datadisk-0${count.index+1}-${storage_data_disk.value}"
       create_option     = "Empty"
       lun               = storage_data_disk.value
       disk_size_gb      = var.data_disk_size_gb
@@ -193,7 +193,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
   dynamic storage_data_disk {
     for_each = var.extra_disks
     content {
-      name              = "${var.vm_hostname}-extradisk-${count.index}-${storage_data_disk.value.name}"
+      name              = "${var.vm_hostname}-extradisk-0${count.index+1}-${storage_data_disk.value.name}"
       create_option     = "Empty"
       lun               = storage_data_disk.key + var.nb_data_disk
       disk_size_gb      = storage_data_disk.value.size
@@ -202,15 +202,16 @@ resource "azurerm_virtual_machine" "vm-windows" {
   }
 
   os_profile {
-    computer_name  = "${var.vm_hostname}-${count.index}"
+    computer_name  = "${var.vm_hostname}-0${count.index+1}"
     admin_username = var.admin_username
     admin_password = var.admin_password
   }
-
   tags = var.tags
 
   os_profile_windows_config {
-    provision_vm_agent = true
+    enable_automatic_upgrades = var.enable_automatic_upgrades
+    provision_vm_agent        = true
+    timezone                  = "New Zealand Standard Time"
   }
 
   dynamic "os_profile_secrets" {
@@ -243,7 +244,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
 
 resource "azurerm_public_ip" "vm" {
   count               = var.nb_public_ip
-  name                = "${var.vm_hostname}-pip-${count.index}"
+  name                = "${var.vm_hostname}-pip-0${count.index+1}"
   resource_group_name = data.azurerm_resource_group.vm.name
   location            = coalesce(var.location, data.azurerm_resource_group.vm.location)
   allocation_method   = var.allocation_method
@@ -286,13 +287,13 @@ resource "azurerm_network_security_rule" "vm" {
 
 resource "azurerm_network_interface" "vm" {
   count                         = var.nb_instances
-  name                          = "${var.vm_hostname}-nic-${count.index}"
+  name                          = "${var.vm_hostname}-nic-0${count.index+1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
   enable_accelerated_networking = var.enable_accelerated_networking
 
   ip_configuration {
-    name                          = "${var.vm_hostname}-ip-${count.index}"
+    name                          = "${var.vm_hostname}-ip-0${count.index+1}"
     subnet_id                     = var.vnet_subnet_id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = length(azurerm_public_ip.vm.*.id) > 0 ? element(concat(azurerm_public_ip.vm.*.id, list("")), count.index) : ""
@@ -300,6 +301,59 @@ resource "azurerm_network_interface" "vm" {
 
   tags = var.tags
 }
+
+##Run ps script on vm
+resource "azurerm_virtual_machine_extension" "ps_extension" {
+  count                = var.nb_instances
+  virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, list("")), count.index) : ""
+  name                 = "${var.vm_hostname}-0${count.index+1}-psscript"
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.10"
+
+  settings = <<SETTINGS
+    {
+        "fileUris": ["https://${var.storage_name}.blob.core.windows.net/scripts/scripts.ps1"]
+    }
+    SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+    {
+      "commandToExecute"  : "powershell -ExecutionPolicy Unrestricted -File scripts.ps1",
+      "storageAccountName": "${var.storage_name}",
+      "storageAccountKey" : "${var.storage_key}"
+    }
+    PROTECTED_SETTINGS
+    depends_on          = [azurerm_virtual_machine.vm-windows]
+    tags = var.tags
+}
+
+## add VM to domain
+ resource "azurerm_virtual_machine_extension" "add_domain" {
+    count                = var.nb_instances
+    virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, list("")), count.index) : ""
+    name                 = "${var.vm_hostname}-0${count.index+1}-addtodomain"
+    publisher            = "Microsoft.Compute"
+    type                 = "JsonADDomainExtension"
+    type_handler_version = "1.3"
+  
+    settings = <<SETTINGS
+      {
+          "Name": "thewarehousegroup.net",
+          "Restart": "true",
+          "Options": "3"
+      }
+  SETTINGS
+  
+    protected_settings = <<PROTECTED_SETTINGS
+      {
+          "User": "thewarehousegroup.net\\${var.admin_user}",
+          "Password": "${var.dom_admin_password}"
+      }
+  PROTECTED_SETTINGS
+  depends_on          = [azurerm_virtual_machine.vm-windows]
+  tags = var.tags
+  }
 
 /*resource "azurerm_network_interface_security_group_association" "test" {
   count                     = var.nb_instances
