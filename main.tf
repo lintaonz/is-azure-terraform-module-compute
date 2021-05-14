@@ -339,6 +339,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
     settings = <<SETTINGS
       {
           "Name": "thewarehousegroup.net",
+          "User": "thewarehousegroup.net\\${var.admin_user}",
           "Restart": "true",
           "Options": "3"
       }
@@ -346,7 +347,6 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
   
     protected_settings = <<PROTECTED_SETTINGS
       {
-          "User": "thewarehousegroup.net\\${var.admin_user}",
           "Password": "${var.dom_admin_password}"
       }
   PROTECTED_SETTINGS
