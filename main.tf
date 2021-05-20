@@ -339,7 +339,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
     settings = <<SETTINGS
       {
           "Name": "thewarehousegroup.net",
-          "User": "thewarehousegroup.net\\${var.admin_user}",
+          "User": "thewarehousegroup.net\\${var.domain_admin_user}",
           "Restart": "true",
           "Options": "3"
       }
@@ -347,7 +347,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
   
     protected_settings = <<PROTECTED_SETTINGS
       {
-          "Password": "${var.dom_admin_password}"
+          "Password": "${var.domain_admin_password}"
       }
   PROTECTED_SETTINGS
   depends_on          = [azurerm_virtual_machine.vm-windows]
