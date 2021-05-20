@@ -143,7 +143,6 @@ resource "azurerm_virtual_machine" "vm-windows" {
   name                          = "${var.vm_hostname}-0${count.index + 1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
-  //availability_set_id           = azurerm_availability_set.vm.id
   vm_size                       = var.vm_size
   network_interface_ids         = [element(azurerm_network_interface.vm.*.id, count.index)]
   delete_os_disk_on_termination = var.delete_os_disk_on_termination
@@ -340,6 +339,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
     settings = <<SETTINGS
       {
           "Name": "thewarehousegroup.net",
+          "User": "thewarehousegroup.net\\${var.domain_admin_user}",
           "Restart": "true",
           "Options": "3"
       }
@@ -347,8 +347,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
   
     protected_settings = <<PROTECTED_SETTINGS
       {
-          "User": "thewarehousegroup.net\\${var.admin_user}",
-          "Password": "${var.dom_admin_password}"
+          "Password": "${var.domain_admin_password}"
       }
   PROTECTED_SETTINGS
   depends_on          = [azurerm_virtual_machine.vm-windows]

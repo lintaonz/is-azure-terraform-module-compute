@@ -26,13 +26,13 @@ variable "admin_password" {
   default     = ""
 }
 
-variable "dom_admin_password" {
+variable "domain_admin_password" {
   description = "The domain admin password to be used to add to domain."
   type        = string
   default     = ""
 }
 
-variable "admin_user" {
+variable "domain_admin_user" {
   description = "The domain admin username to be used to add to domain."
   type        = string
   default     = ""
