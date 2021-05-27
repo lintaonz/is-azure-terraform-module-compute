@@ -318,7 +318,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
 
   protected_settings = <<PROTECTED_SETTINGS
     {
-      "commandToExecute"  : "powershell -ExecutionPolicy Unrestricted -File scripts.ps1",
+      "commandToExecute"  : "powershell -ExecutionPolicy Unrestricted -File scripts.ps1 -storageAccountKey ${var.storage_key}",
       "storageAccountName": "${var.storage_name}",
       "storageAccountKey" : "${var.storage_key}"
     }
