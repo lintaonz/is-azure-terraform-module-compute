@@ -30,7 +30,7 @@ resource "azurerm_storage_account" "vm-sa" {
 }
 
 resource "azurerm_virtual_machine" "vm-linux" {
-  count                         = ! contains(list(var.vm_os_simple, var.vm_os_offer), "WindowsServer") && ! var.is_windows_image ? var.nb_instances : 0
+  count                         = ! contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer") && ! var.is_windows_image ? var.nb_instances : 0
   name                          = "${var.vm_hostname}-0${count.index+1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
@@ -139,7 +139,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
 }
 
 resource "azurerm_virtual_machine" "vm-windows" {
-  count                         = (var.is_windows_image || contains(list(var.vm_os_simple, var.vm_os_offer), "WindowsServer")) ? var.nb_instances : 0
+  count                         = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
   name                          = "${var.vm_hostname}-0${count.index + 1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
@@ -295,7 +295,7 @@ resource "azurerm_network_interface" "vm" {
     name                          = "${var.vm_hostname}-ip-0${count.index+1}"
     subnet_id                     = var.vnet_subnet_id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = length(azurerm_public_ip.vm.*.id) > 0 ? element(concat(azurerm_public_ip.vm.*.id, list("")), count.index) : ""
+    public_ip_address_id          = length(azurerm_public_ip.vm.*.id) > 0 ? element(concat(azurerm_public_ip.vm.*.id, tolist([""])), count.index) : ""
   }
 
   tags = var.tags
@@ -304,7 +304,7 @@ resource "azurerm_network_interface" "vm" {
 ##Run ps script on vm
 resource "azurerm_virtual_machine_extension" "ps_extension" {
   count                = var.nb_instances
-  virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, list("")), count.index) : ""
+  virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
   name                 = "${var.vm_hostname}-0${count.index+1}-psscript"
   publisher            = "Microsoft.Compute"
   type                 = "CustomScriptExtension"
@@ -330,7 +330,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
 ## add VM to domain
  resource "azurerm_virtual_machine_extension" "add_domain" {
     count                = var.nb_instances
-    virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, list("")), count.index) : ""
+    virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
     name                 = "${var.vm_hostname}-0${count.index+1}-addtodomain"
     publisher            = "Microsoft.Compute"
     type                 = "JsonADDomainExtension"
