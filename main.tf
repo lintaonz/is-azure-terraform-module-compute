@@ -323,7 +323,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
       "storageAccountKey" : "${var.storage_key}"
     }
     PROTECTED_SETTINGS
-    depends_on          = [azurerm_virtual_machine.vm-windows]
+    depends_on          = [time_sleep.wait_300_seconds]
     tags = var.tags
 }
 
@@ -354,6 +354,11 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
   tags = var.tags
   }
 
+resource "time_sleep" "wait_300_seconds" {
+  depends_on = [azurerm_virtual_machine_extension.add_domain]
+
+  create_duration = "300s"
+}
 /*resource "azurerm_network_interface_security_group_association" "test" {
   count                     = var.nb_instances
   network_interface_id      = azurerm_network_interface.vm[count.index].id
