@@ -303,7 +303,7 @@ resource "azurerm_network_interface" "vm" {
 
 ##Run ps script on vm
 resource "azurerm_virtual_machine_extension" "ps_extension" {
-  count                = var.nb_instances
+  count                = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
   virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
   name                 = "${var.vm_hostname}-0${count.index+1}-psscript"
   publisher            = "Microsoft.Compute"
@@ -329,7 +329,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
 
 ## add VM to domain
  resource "azurerm_virtual_machine_extension" "add_domain" {
-    count                = var.nb_instances
+    count                = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
     virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
     name                 = "${var.vm_hostname}-0${count.index+1}-addtodomain"
     publisher            = "Microsoft.Compute"
