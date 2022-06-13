@@ -26,6 +26,7 @@ resource "azurerm_storage_account" "vm-sa" {
   location                 = coalesce(var.location, data.azurerm_resource_group.vm.location)
   account_tier             = element(split("_", var.boot_diagnostics_sa_type), 0)
   account_replication_type = element(split("_", var.boot_diagnostics_sa_type), 1)
+  min_tls_version          = "TLS1_2"
   tags                     = var.tags
 }
 
