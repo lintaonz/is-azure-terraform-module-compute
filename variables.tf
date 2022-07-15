@@ -271,3 +271,9 @@ variable "enable_automatic_upgrades" {
   type        = bool
   default     = false
 }
+
+variable "azurerm_virtual_machine_extension_create_timeout" {
+  description = "Timeout when creating the Virtual Machine Extension (eg. 60m, 2h)"
+  type        = string
+  default     = "60m"  
+}

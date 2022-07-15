@@ -140,7 +140,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
 }
 
 resource "azurerm_virtual_machine" "vm-windows" {
-  count                         = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
+  count                         = local.windows_server_count
   name                          = "${var.vm_hostname}-0${count.index + 1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
@@ -304,7 +304,7 @@ resource "azurerm_network_interface" "vm" {
 
 ##Run ps script on vm
 resource "azurerm_virtual_machine_extension" "ps_extension" {
-  count                = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
+  count                = local.windows_server_count
   virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
   name                 = "${var.vm_hostname}-0${count.index + 1}-psscript"
   publisher            = "Microsoft.Compute"
@@ -326,11 +326,15 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
     PROTECTED_SETTINGS
   depends_on         = [time_sleep.wait_300_seconds]
   tags               = var.tags
+
+  timeouts {
+    create = var.azurerm_virtual_machine_extension_create_timeout
+  }
 }
 
 ## add VM to domain
 resource "azurerm_virtual_machine_extension" "add_domain" {
-  count                = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
+  count                = local.windows_server_count
   virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
   name                 = "${var.vm_hostname}-0${count.index + 1}-addtodomain"
   publisher            = "Microsoft.Compute"
@@ -353,9 +357,14 @@ resource "azurerm_virtual_machine_extension" "add_domain" {
   PROTECTED_SETTINGS
   depends_on         = [azurerm_virtual_machine.vm-windows]
   tags               = var.tags
+
+  timeouts {
+    create = var.azurerm_virtual_machine_extension_create_timeout
+  }
 }
 
 resource "time_sleep" "wait_300_seconds" {
+  count      = local.windows_server_count
   depends_on = [azurerm_virtual_machine_extension.add_domain]
 
   create_duration = "300s"
