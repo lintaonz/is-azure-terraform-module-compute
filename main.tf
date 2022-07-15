@@ -31,23 +31,23 @@ resource "azurerm_storage_account" "vm-sa" {
 }
 
 resource "azurerm_virtual_machine" "vm-linux" {
-  count                         = ! contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer") && ! var.is_windows_image ? var.nb_instances : 0
-  name                          = "${var.vm_hostname}-0${count.index+1}"
-  resource_group_name           = data.azurerm_resource_group.vm.name
-  location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
+  count               = !contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer") && !var.is_windows_image ? var.nb_instances : 0
+  name                = "${var.vm_hostname}-0${count.index + 1}"
+  resource_group_name = data.azurerm_resource_group.vm.name
+  location            = coalesce(var.location, data.azurerm_resource_group.vm.location)
   //availability_set_id           = azurerm_availability_set.vm.id
   vm_size                       = var.vm_size
   network_interface_ids         = [element(azurerm_network_interface.vm.*.id, count.index)]
   delete_os_disk_on_termination = var.delete_os_disk_on_termination
 
-  dynamic identity {
+  dynamic "identity" {
     for_each = length(var.identity_ids) == 0 && var.identity_type == "SystemAssigned" ? [var.identity_type] : []
     content {
       type = var.identity_type
     }
   }
 
-  dynamic identity {
+  dynamic "identity" {
     for_each = length(var.identity_ids) > 0 || var.identity_type == "UserAssigned" ? [var.identity_type] : []
     content {
       type         = var.identity_type
@@ -64,16 +64,16 @@ resource "azurerm_virtual_machine" "vm-linux" {
   }
 
   storage_os_disk {
-    name              = "osdisk-${var.vm_hostname}-0${count.index+1}"
+    name              = "osdisk-${var.vm_hostname}-0${count.index + 1}"
     create_option     = "FromImage"
     caching           = "ReadWrite"
     managed_disk_type = var.storage_account_type
   }
 
-  dynamic storage_data_disk {
+  dynamic "storage_data_disk" {
     for_each = range(var.nb_data_disk)
     content {
-      name              = "${var.vm_hostname}-datadisk-0${count.index+1}-${storage_data_disk.value}"
+      name              = "${var.vm_hostname}-datadisk-0${count.index + 1}-${storage_data_disk.value}"
       create_option     = "Empty"
       lun               = storage_data_disk.value
       disk_size_gb      = var.data_disk_size_gb
@@ -81,10 +81,10 @@ resource "azurerm_virtual_machine" "vm-linux" {
     }
   }
 
-  dynamic storage_data_disk {
+  dynamic "storage_data_disk" {
     for_each = var.extra_disks
     content {
-      name              = "${var.vm_hostname}-extradisk-0${count.index+1}-${storage_data_disk.value.name}"
+      name              = "${var.vm_hostname}-extradisk-0${count.index + 1}-${storage_data_disk.value.name}"
       create_option     = "Empty"
       lun               = storage_data_disk.key + var.nb_data_disk
       disk_size_gb      = storage_data_disk.value.size
@@ -93,7 +93,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
   }
 
   os_profile {
-    computer_name  = "${var.vm_hostname}-0${count.index+1}"
+    computer_name  = "${var.vm_hostname}-0${count.index + 1}"
     admin_username = var.admin_username
     admin_password = var.admin_password
     custom_data    = var.custom_data
@@ -102,7 +102,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
   os_profile_linux_config {
     disable_password_authentication = var.enable_ssh_key
 
-    dynamic ssh_keys {
+    dynamic "ssh_keys" {
       for_each = var.enable_ssh_key ? local.ssh_keys : []
       content {
         path     = "/home/${var.admin_username}/.ssh/authorized_keys"
@@ -110,7 +110,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
       }
     }
 
-    dynamic ssh_keys {
+    dynamic "ssh_keys" {
       for_each = var.enable_ssh_key ? var.ssh_key_values : []
       content {
         path     = "/home/${var.admin_username}/.ssh/authorized_keys"
@@ -140,7 +140,7 @@ resource "azurerm_virtual_machine" "vm-linux" {
 }
 
 resource "azurerm_virtual_machine" "vm-windows" {
-  count                         = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
+  count                         = local.windows_server_count
   name                          = "${var.vm_hostname}-0${count.index + 1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
@@ -149,14 +149,14 @@ resource "azurerm_virtual_machine" "vm-windows" {
   delete_os_disk_on_termination = var.delete_os_disk_on_termination
   license_type                  = var.license_type
 
-  dynamic identity {
+  dynamic "identity" {
     for_each = length(var.identity_ids) == 0 && var.identity_type == "SystemAssigned" ? [var.identity_type] : []
     content {
       type = var.identity_type
     }
   }
 
-  dynamic identity {
+  dynamic "identity" {
     for_each = length(var.identity_ids) > 0 || var.identity_type == "UserAssigned" ? [var.identity_type] : []
     content {
       type         = var.identity_type
@@ -173,16 +173,16 @@ resource "azurerm_virtual_machine" "vm-windows" {
   }
 
   storage_os_disk {
-    name              = "${var.vm_hostname}-osdisk-0${count.index+1}"
+    name              = "${var.vm_hostname}-osdisk-0${count.index + 1}"
     create_option     = "FromImage"
     caching           = "ReadWrite"
     managed_disk_type = var.storage_account_type
   }
 
-  dynamic storage_data_disk {
+  dynamic "storage_data_disk" {
     for_each = range(var.nb_data_disk)
     content {
-      name              = "${var.vm_hostname}-datadisk-0${count.index+1}-${storage_data_disk.value}"
+      name              = "${var.vm_hostname}-datadisk-0${count.index + 1}-${storage_data_disk.value}"
       create_option     = "Empty"
       lun               = storage_data_disk.value
       disk_size_gb      = var.data_disk_size_gb
@@ -190,10 +190,10 @@ resource "azurerm_virtual_machine" "vm-windows" {
     }
   }
 
-  dynamic storage_data_disk {
+  dynamic "storage_data_disk" {
     for_each = var.extra_disks
     content {
-      name              = "${var.vm_hostname}-extradisk-0${count.index+1}-${storage_data_disk.value.name}"
+      name              = "${var.vm_hostname}-extradisk-0${count.index + 1}-${storage_data_disk.value.name}"
       create_option     = "Empty"
       lun               = storage_data_disk.key + var.nb_data_disk
       disk_size_gb      = storage_data_disk.value.size
@@ -202,7 +202,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
   }
 
   os_profile {
-    computer_name  = "${var.vm_hostname}-0${count.index+1}"
+    computer_name  = "${var.vm_hostname}-0${count.index + 1}"
     admin_username = var.admin_username
     admin_password = var.admin_password
   }
@@ -244,7 +244,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
 
 resource "azurerm_public_ip" "vm" {
   count               = var.nb_public_ip
-  name                = "${var.vm_hostname}-pip-0${count.index+1}"
+  name                = "${var.vm_hostname}-pip-0${count.index + 1}"
   resource_group_name = data.azurerm_resource_group.vm.name
   location            = coalesce(var.location, data.azurerm_resource_group.vm.location)
   allocation_method   = var.allocation_method
@@ -287,13 +287,13 @@ resource "azurerm_network_security_rule" "vm" {
 
 resource "azurerm_network_interface" "vm" {
   count                         = var.nb_instances
-  name                          = "${var.vm_hostname}-nic-0${count.index+1}"
+  name                          = "${var.vm_hostname}-nic-0${count.index + 1}"
   resource_group_name           = data.azurerm_resource_group.vm.name
   location                      = coalesce(var.location, data.azurerm_resource_group.vm.location)
   enable_accelerated_networking = var.enable_accelerated_networking
 
   ip_configuration {
-    name                          = "${var.vm_hostname}-ip-0${count.index+1}"
+    name                          = "${var.vm_hostname}-ip-0${count.index + 1}"
     subnet_id                     = var.vnet_subnet_id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = length(azurerm_public_ip.vm.*.id) > 0 ? element(concat(azurerm_public_ip.vm.*.id, tolist([""])), count.index) : ""
@@ -304,9 +304,9 @@ resource "azurerm_network_interface" "vm" {
 
 ##Run ps script on vm
 resource "azurerm_virtual_machine_extension" "ps_extension" {
-  count                = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
+  count                = local.windows_server_count
   virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
-  name                 = "${var.vm_hostname}-0${count.index+1}-psscript"
+  name                 = "${var.vm_hostname}-0${count.index + 1}-psscript"
   publisher            = "Microsoft.Compute"
   type                 = "CustomScriptExtension"
   type_handler_version = "1.10"
@@ -324,20 +324,24 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
       "storageAccountKey" : "${var.storage_key}"
     }
     PROTECTED_SETTINGS
-    depends_on          = [time_sleep.wait_300_seconds]
-    tags = var.tags
+  depends_on         = [time_sleep.wait_300_seconds]
+  tags               = var.tags
+
+  timeouts {
+    create = var.azurerm_virtual_machine_extension_create_timeout
+  }
 }
 
 ## add VM to domain
- resource "azurerm_virtual_machine_extension" "add_domain" {
-    count                = (var.is_windows_image || contains(tolist([var.vm_os_simple, var.vm_os_offer]), "WindowsServer")) ? var.nb_instances : 0
-    virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
-    name                 = "${var.vm_hostname}-0${count.index+1}-addtodomain"
-    publisher            = "Microsoft.Compute"
-    type                 = "JsonADDomainExtension"
-    type_handler_version = "1.3"
-  
-    settings = <<SETTINGS
+resource "azurerm_virtual_machine_extension" "add_domain" {
+  count                = local.windows_server_count
+  virtual_machine_id   = length(azurerm_virtual_machine.vm-windows.*.id) > 0 ? element(concat(azurerm_virtual_machine.vm-windows.*.id, tolist([""])), count.index) : ""
+  name                 = "${var.vm_hostname}-0${count.index + 1}-addtodomain"
+  publisher            = "Microsoft.Compute"
+  type                 = "JsonADDomainExtension"
+  type_handler_version = "1.3"
+
+  settings = <<SETTINGS
       {
           "Name": "thewarehousegroup.net",
           "User": "thewarehousegroup.net\\${var.domain_admin_user}",
@@ -345,17 +349,22 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
           "Options": "3"
       }
   SETTINGS
-  
-    protected_settings = <<PROTECTED_SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
       {
           "Password": "${var.domain_admin_password}"
       }
   PROTECTED_SETTINGS
-  depends_on          = [azurerm_virtual_machine.vm-windows]
-  tags = var.tags
+  depends_on         = [azurerm_virtual_machine.vm-windows]
+  tags               = var.tags
+
+  timeouts {
+    create = var.azurerm_virtual_machine_extension_create_timeout
   }
+}
 
 resource "time_sleep" "wait_300_seconds" {
+  count      = local.windows_server_count
   depends_on = [azurerm_virtual_machine_extension.add_domain]
 
   create_duration = "300s"
