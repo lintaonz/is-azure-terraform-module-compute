@@ -206,7 +206,7 @@ resource "azurerm_virtual_machine" "vm-windows" {
     admin_username = var.admin_username
     admin_password = var.admin_password
   }
-  tags = var.tags
+  tags = merge(var.tags, { "name" : "${var.vm_hostname}-0${count.index + 1}" })
 
   os_profile_windows_config {
     enable_automatic_upgrades = var.enable_automatic_upgrades
