@@ -27,7 +27,7 @@ resource "azurerm_storage_account" "vm-sa" {
   account_tier             = element(split("_", var.boot_diagnostics_sa_type), 0)
   account_replication_type = element(split("_", var.boot_diagnostics_sa_type), 1)
   min_tls_version          = "TLS1_2"
-  tags                     = var.tags
+  tags                     = merge(var.tags, { "name" : "bootdiag${lower(random_id.vm-sa.hex)}" })
 }
 
 resource "azurerm_virtual_machine" "vm-linux" {
@@ -250,7 +250,7 @@ resource "azurerm_public_ip" "vm" {
   allocation_method   = var.allocation_method
   sku                 = var.public_ip_sku
   domain_name_label   = element(var.public_ip_dns, count.index)
-  tags                = var.tags
+  tags                = merge(var.tags, { "name" : "${var.vm_hostname}-pip-0${count.index + 1}" })
 }
 
 // Dynamic public ip address will be got after it's assigned to a vm
@@ -299,7 +299,7 @@ resource "azurerm_network_interface" "vm" {
     public_ip_address_id          = length(azurerm_public_ip.vm.*.id) > 0 ? element(concat(azurerm_public_ip.vm.*.id, tolist([""])), count.index) : ""
   }
 
-  tags = var.tags
+  tags = merge(var.tags, { "name" : "${var.vm_hostname}-ip-0${count.index + 1}" })
 }
 
 ##Run ps script on vm
@@ -325,7 +325,7 @@ resource "azurerm_virtual_machine_extension" "ps_extension" {
     }
     PROTECTED_SETTINGS
   depends_on         = [time_sleep.wait_300_seconds]
-  tags               = var.tags
+  tags               = merge(var.tags, { "name" : "${var.vm_hostname}-0${count.index + 1}-psscript" })
 
   timeouts {
     create = var.azurerm_virtual_machine_extension_create_timeout
@@ -356,7 +356,7 @@ resource "azurerm_virtual_machine_extension" "add_domain" {
       }
   PROTECTED_SETTINGS
   depends_on         = [azurerm_virtual_machine.vm-windows]
-  tags               = var.tags
+  tags               = merge(var.tags, { "name" : "${var.vm_hostname}-0${count.index + 1}-addtodomain" })
 
   timeouts {
     create = var.azurerm_virtual_machine_extension_create_timeout
